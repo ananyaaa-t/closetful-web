@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSiteOrigin } from "@/lib/site-origin";
 
 export type AuthState = {
   error: string | null;
@@ -25,7 +26,7 @@ export async function signup(
     options: {
       // Where Supabase redirects after the user clicks the confirmation
       // link in their email.
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/confirm`,
+      emailRedirectTo: `${await getSiteOrigin()}/auth/confirm`,
     },
   });
 
@@ -111,7 +112,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/confirm`,
+      redirectTo: `${await getSiteOrigin()}/auth/confirm`,
     },
   });
 

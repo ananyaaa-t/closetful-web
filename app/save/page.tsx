@@ -2,18 +2,31 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { saveItemForUser } from "@/lib/save-item";
 
+/** Pulls the first http(s) URL out of arbitrary shared text. Android's
+ * native share sheet often puts the link inside `text` (e.g. "Check this
+ * out! https://...") rather than a dedicated `url` field, depending on the
+ * sharing app, so `url` alone isn't reliable for the PWA share target. */
+function extractUrl(url?: string, text?: string): string | undefined {
+  if (url) return url;
+  const match = text?.match(/https?:\/\/\S+/);
+  return match?.[0];
+}
+
 /**
- * Destination for the "Save to Closetful" bookmarklet. Opened in a small
- * popup window from any product page with `?url=<current page>`. Saves
- * immediately (reusing the same pipeline as the paste-URL form) and shows
- * a compact confirmation the user can glance at and close.
+ * Destination for the "Save to Closetful" bookmarklet, and the PWA's
+ * Web Share Target (see app/manifest.ts) — Android/Chrome installed users
+ * can tap "Share" on any link and land here with `?url=` (or `?text=`)
+ * pre-filled. Opened as a popup from the bookmarklet with `?url=<current
+ * page>`. Saves immediately (reusing the same pipeline as the paste-URL
+ * form) and shows a compact confirmation the user can glance at and close.
  */
 export default async function SavePage({
   searchParams,
 }: {
-  searchParams: Promise<{ url?: string }>;
+  searchParams: Promise<{ url?: string; text?: string }>;
 }) {
-  const { url } = await searchParams;
+  const params = await searchParams;
+  const url = extractUrl(params.url, params.text);
 
   const supabase = await createClient();
   const {

@@ -21,7 +21,7 @@ const EXPLORE_BRANDS: { label: string; url: string }[] = [
 export function ClosetBoard({ items }: { items: Item[] }) {
   const [activeBrand, setActiveBrand] = useState("ALL");
   const [search, setSearch] = useState("");
-  const [addOpen, setAddOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const brands = useMemo(() => {
     const unique = new Set(items.map((item) => brandFromUrl(item.url)));
@@ -44,6 +44,22 @@ export function ClosetBoard({ items }: { items: Item[] }) {
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10">
+      {/* Paste-URL is the primary, universal save method (works on any
+          device, no install) so it's always visible rather than hidden
+          behind a toggle. The bookmarklet is a desktop power-user bonus,
+          tucked behind "More ways to add". */}
+      <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
+        <PasteUrlForm />
+        <button
+          type="button"
+          onClick={() => setMoreOpen((v) => !v)}
+          className="w-fit text-xs text-white/40 underline underline-offset-2 hover:text-white/70"
+        >
+          {moreOpen ? "Hide other ways to add" : "More ways to add"}
+        </button>
+        {moreOpen && <BookmarkletButton />}
+      </div>
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <input
           type="search"
@@ -52,21 +68,8 @@ export function ClosetBoard({ items }: { items: Item[] }) {
           placeholder="search"
           className="w-full rounded-md border-b border-white/20 bg-transparent px-1 py-1.5 text-sm text-white outline-none placeholder:text-white/40 sm:w-64"
         />
-        <button
-          type="button"
-          onClick={() => setAddOpen((v) => !v)}
-          className="w-fit rounded-full border border-white/25 px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-white/80 hover:border-white/60 hover:text-white"
-        >
-          {addOpen ? "Close" : "+ Add item"}
-        </button>
       </div>
 
-      {addOpen && (
-        <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
-          <PasteUrlForm />
-          <BookmarkletButton />
-        </div>
-      )}
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/10 pb-4 text-xs font-medium uppercase tracking-wider">
         <button

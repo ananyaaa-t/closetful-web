@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { scrapeProductMetadata, type ScrapedProduct } from "@/lib/scrape";
 import { categorizeItem } from "@/lib/categorize";
+import { isRateLimited } from "@/lib/rate-limit";
 
 export type SaveItemResult =
   | { ok: true; item: Record<string, unknown> }
@@ -31,6 +32,17 @@ export async function saveItemForUser(
   rawUrl: string,
   providedMetadata?: ProvidedMetadata
 ): Promise<SaveItemResult> {
+  // Rate-limited per user (not per IP) since every entry point into this
+  // function is already authenticated, and each call costs a scrape +
+  // Gemini call — see lib/rate-limit.ts for why this is a soft, in-memory
+  // limit rather than a hard guarantee.
+  if (isRateLimited(userId)) {
+    return {
+      ok: false,
+      error: "You're saving items too quickly. Please wait a few minutes and try again.",
+    };
+  }
+
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);

@@ -25,8 +25,8 @@ export function BookmarkletButton() {
   const code = `(function(){window.open('${origin}/save?url='+encodeURIComponent(location.href),'closetful_save','width=420,height=420');})();`;
 
   return (
-    <div className="flex w-full flex-col gap-2 rounded-lg border border-white/15 bg-white/5 p-4 text-sm">
-      <p className="text-white/60">
+    <div className="flex w-full flex-col gap-2 rounded-lg border border-[#FDF8F9]/15 bg-[#FDF8F9]/5 p-4 text-sm">
+      <p className="text-[#FDF8F9]/60">
         Drag this to your bookmarks bar, then click it on any product page to
         save instantly — no copy-pasting URLs.
       </p>
@@ -34,7 +34,7 @@ export function BookmarkletButton() {
         href={`javascript:${code}`}
         onClick={(e) => e.preventDefault()}
         draggable
-        className="w-fit cursor-grab rounded-full bg-white px-4 py-2 text-xs font-medium text-black active:cursor-grabbing"
+        className="w-fit cursor-grab rounded-full bg-[#FDF8F9] px-4 py-2 text-xs font-medium text-[#38040E] active:cursor-grabbing"
       >
         + Save to Closetful
       </a>

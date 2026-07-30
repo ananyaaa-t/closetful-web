@@ -21,8 +21,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Save anything you want from anywhere on the internet, organized automatically in one place.",
     start_url: "/closet",
     display: "standalone",
-    background_color: "#3a0d1a",
-    theme_color: "#3a0d1a",
+    background_color: "#38040E",
+    theme_color: "#38040E",
     icons: [
       { src: "/icon-192", sizes: "192x192", type: "image/png" },
       { src: "/icon-512", sizes: "512x512", type: "image/png" },

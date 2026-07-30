@@ -26,12 +26,12 @@ export function PasteUrlForm() {
         type="url"
         required
         placeholder="Paste a product URL…"
-        className="flex-1 rounded-lg border border-white/15 bg-transparent px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/40"
+        className="flex-1 rounded-lg border border-[#FDF8F9]/15 bg-transparent px-3 py-2.5 text-sm text-[#FDF8F9] outline-none placeholder:text-[#FDF8F9]/40 focus:border-[#FDF8F9]/40"
       />
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-black transition-colors hover:bg-white/85 disabled:opacity-50"
+        className="rounded-lg bg-[#FDF8F9] px-5 py-2.5 text-sm font-medium text-[#38040E] transition-colors hover:bg-[#FDF8F9]/85 disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save"}
       </button>

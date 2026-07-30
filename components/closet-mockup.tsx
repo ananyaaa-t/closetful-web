@@ -68,7 +68,7 @@ export function ClosetMockup() {
       <div className="grid grid-cols-3 gap-3 sm:gap-4 md:grid-cols-6">
         {MOCK_ITEMS.map((item) => (
           <div key={item.name} className="flex flex-col">
-            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-md bg-black/20">
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-md bg-[#450A15]">
               <Image
                 src={`${item.image}?w=400&auto=format&fit=crop&q=60`}
                 alt=""

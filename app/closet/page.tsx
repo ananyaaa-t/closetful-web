@@ -20,23 +20,9 @@ export default async function ClosetPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div className="flex flex-1 flex-col bg-[#3a0d1a]">
+    <div className="flex min-h-screen flex-1 flex-col bg-[#38040E] font-sans text-[#FDF8F9] selection:bg-[#FDF8F9]/15">
       <ExtensionSync />
-      <header className="flex items-center justify-between border-b border-white/10 px-6 py-5 sm:px-10">
-        <span className="text-xl font-semibold lowercase tracking-tight text-white">
-          closetful.
-        </span>
-        <form action={logout}>
-          <button
-            type="submit"
-            className="text-xs uppercase tracking-wider text-white/50 hover:text-white/80"
-          >
-            Log out · {user.email}
-          </button>
-        </form>
-      </header>
-
-      <ClosetBoard items={items ?? []} />
+      <ClosetBoard items={items ?? []} userEmail={user.email ?? ""} logout={logout} />
     </div>
   );
 }

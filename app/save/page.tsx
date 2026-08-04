@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { saveItemForUser } from "@/lib/save-item";
+import { scrapeProductMetadata } from "@/lib/scrape";
+import { categorizeItem } from "@/lib/categorize";
+import { SaveItemForm } from "@/app/save/save-item-form";
 
 /** Pulls the first http(s) URL out of arbitrary shared text. Android's
  * native share sheet often puts the link inside `text` (e.g. "Check this
@@ -17,8 +19,12 @@ function extractUrl(url?: string, text?: string): string | undefined {
  * Web Share Target (see app/manifest.ts) — Android/Chrome installed users
  * can tap "Share" on any link and land here with `?url=` (or `?text=`)
  * pre-filled. Opened as a popup from the bookmarklet with `?url=<current
- * page>`. Saves immediately (reusing the same pipeline as the paste-URL
- * form) and shows a compact confirmation the user can glance at and close.
+ * page>`.
+ *
+ * Shows a preview (scraped name/price/image + an AI-suggested category)
+ * and lets the user edit the category and add a note before anything is
+ * actually saved — mirroring the Chrome extension's "preview before save"
+ * panel, rather than saving instantly like this page used to.
  */
 export default async function SavePage({
   searchParams,
@@ -36,12 +42,10 @@ export default async function SavePage({
   if (!user) {
     return (
       <Shell>
-        <p className="text-black dark:text-zinc-50">
-          You need to be logged in to save items.
-        </p>
+        <p className="text-[#FDF8F9]">You need to be logged in to save items.</p>
         <Link
           href={`/login?message=Log in, then click the Save button again on the product page.`}
-          className="text-sm font-medium underline"
+          className="text-sm font-medium text-[#FDF8F9] underline"
         >
           Log in
         </Link>
@@ -52,54 +56,42 @@ export default async function SavePage({
   if (!url) {
     return (
       <Shell>
-        <p className="text-black dark:text-zinc-50">No URL provided.</p>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Use the &quot;Save to Closetful&quot; bookmarklet from a product
-          page instead of opening this directly.
+        <p className="text-[#FDF8F9]">No URL provided.</p>
+        <p className="text-sm text-[#FDF8F9]/50">
+          Use the &quot;Save to Closetful&quot; bookmarklet from a product page
+          instead of opening this directly.
         </p>
       </Shell>
     );
   }
 
-  const result = await saveItemForUser(supabase, user.id, url);
-
-  if (!result.ok) {
-    return (
-      <Shell>
-        <p className="text-red-600 dark:text-red-400">{result.error}</p>
-      </Shell>
-    );
-  }
-
-  const item = result.item as {
-    name: string | null;
-    image_url: string | null;
-    price: number | null;
-  };
+  // Scrape and get an AI category suggestion up front, in parallel, so the
+  // preview form below can show real data instead of blank fields — same
+  // pipeline the paste-URL flow uses, just surfaced before saving instead
+  // of after.
+  const scraped = await scrapeProductMetadata(url);
+  const categorization = await categorizeItem({
+    name: scraped.name,
+    url: scraped.url,
+    price: scraped.price,
+  });
 
   return (
     <Shell>
-      <p className="text-lg font-medium text-black dark:text-zinc-50">
-        Saved ✓
-      </p>
-      <p className="line-clamp-2 max-w-xs text-center text-sm text-zinc-600 dark:text-zinc-400">
-        {item.name ?? "Item"}
-        {item.price !== null ? ` · $${item.price.toFixed(2)}` : ""}
-      </p>
-      <Link
-        href="/closet"
-        className="text-sm font-medium text-black underline dark:text-zinc-50"
-      >
-        View your closet
-      </Link>
-      <p className="text-xs text-zinc-400">You can close this window.</p>
+      <SaveItemForm
+        url={scraped.url}
+        name={scraped.name}
+        price={scraped.price}
+        imageUrl={scraped.image_url}
+        suggestedCategory={categorization?.category ?? null}
+      />
     </Shell>
   );
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-zinc-50 px-6 py-10 text-center dark:bg-black">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#38040E] px-6 py-10 text-center font-sans text-[#FDF8F9] selection:bg-[#FDF8F9]/15">
       {children}
     </div>
   );

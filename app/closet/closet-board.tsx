@@ -5,6 +5,7 @@ import { Search, LayoutGrid, List, ChevronRight, Bookmark } from "lucide-react";
 import { ItemCard, type Item } from "@/app/closet/item-card";
 import { PasteUrlForm } from "@/app/closet/paste-url-form";
 import { BookmarkletButton } from "@/app/closet/bookmarklet-button";
+import { ShareClosetButton } from "@/app/closet/share-closet-button";
 import { brandFromUrl } from "@/lib/brand";
 
 type ViewMode = "grid" | "list";
@@ -64,10 +65,14 @@ export function ClosetBoard({
   items,
   userEmail,
   logout,
+  isPublic,
+  shareUrl,
 }: {
   items: Item[];
   userEmail: string;
   logout: () => void | Promise<void>;
+  isPublic: boolean;
+  shareUrl: string;
 }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [search, setSearch] = useState("");
@@ -169,6 +174,7 @@ export function ClosetBoard({
                 <List className="h-3.5 w-3.5" />
               </button>
             </div>
+            <ShareClosetButton isPublic={isPublic} shareUrl={shareUrl} />
           </div>
         </div>
 

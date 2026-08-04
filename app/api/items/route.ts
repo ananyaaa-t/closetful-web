@@ -29,13 +29,17 @@ export async function POST(request: Request) {
 
   // Optional pre-scraped metadata (sent by the Chrome extension, which
   // reads the product page's DOM directly in the browser — see
-  // lib/save-item.ts for why this matters).
+  // lib/save-item.ts for why this matters), plus an optional user-picked
+  // category and note from the extension's/mobile's "preview before save"
+  // panel.
   const providedMetadata =
-    body?.name || body?.image_url || body?.price
+    body?.name || body?.image_url || body?.price || body?.category || body?.notes
       ? {
           name: typeof body.name === "string" ? body.name : null,
           image_url: typeof body.image_url === "string" ? body.image_url : null,
           price: typeof body.price === "number" ? body.price : null,
+          category: typeof body.category === "string" ? body.category : null,
+          notes: typeof body.notes === "string" ? body.notes : null,
         }
       : undefined;
 

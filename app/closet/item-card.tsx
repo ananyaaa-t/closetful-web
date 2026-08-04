@@ -14,6 +14,7 @@ export type Item = {
   image_url: string | null;
   category: string | null;
   tags: string[];
+  notes: string | null;
 };
 
 type ItemCardViewMode = "grid" | "list" | "recent";
@@ -169,6 +170,9 @@ export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardVie
           <p className="mt-0.5 truncate text-[10px] tracking-wide text-[#FDF8F9]/35">
             {brandFromUrl(item.url)} · {source}
           </p>
+          {item.notes && (
+            <p className="mt-1 line-clamp-1 text-[11px] italic text-[#FDF8F9]/40">{item.notes}</p>
+          )}
           {editForm}
           {addDetailsButton}
         </div>
@@ -229,6 +233,9 @@ export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardVie
           {price && <span className="text-[13px] font-medium text-[#FDF8F9]">{price}</span>}
           <span className="tracking-wide text-[10px] text-[#FDF8F9]/35">{source}</span>
         </div>
+        {item.notes && (
+          <p className="line-clamp-2 text-[11px] italic text-[#FDF8F9]/40">{item.notes}</p>
+        )}
         {editForm}
         {addDetailsButton}
         <a

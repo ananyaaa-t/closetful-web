@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { scrapeProductMetadata, type ScrapedProduct } from "@/lib/scrape";
-import { categorizeItem } from "@/lib/categorize";
+import { categorizeItem, CATEGORIES } from "@/lib/categorize";
 import { isRateLimited } from "@/lib/rate-limit";
 
 export type SaveItemResult =
@@ -11,6 +11,13 @@ export type ProvidedMetadata = {
   name?: string | null;
   price?: number | null;
   image_url?: string | null;
+  // A user-picked category (from the extension's or mobile's "preview
+  // before save" panel) and an optional free-text note. When `category`
+  // is provided here, it takes priority over AI categorization — the
+  // person looking at the actual product page already knows what it is,
+  // so there's no reason to spend a Gemini call re-guessing it.
+  category?: string | null;
+  notes?: string | null;
 };
 
 /**
@@ -66,11 +73,29 @@ export async function saveItemForUser(
       }
     : await scrapeProductMetadata(parsed.toString());
 
-  const categorization = await categorizeItem({
-    name: metadata.name,
-    url: metadata.url,
-    price: metadata.price,
-  });
+  // Only trust a caller-provided category if it's one of the fixed values
+  // Gemini is also constrained to — never let arbitrary client input land
+  // directly in the column unvalidated.
+  const providedCategory =
+    providedMetadata?.category &&
+    (CATEGORIES as readonly string[]).includes(providedMetadata.category)
+      ? providedMetadata.category
+      : null;
+
+  const notes = providedMetadata?.notes?.trim() || null;
+
+  // Skip the Gemini call entirely when the caller already supplied a
+  // category — the person looking at the real product page just told us
+  // what it is, so there's nothing left for AI categorization to add.
+  const categorization = providedCategory
+    ? null
+    : await categorizeItem({
+        name: metadata.name,
+        url: metadata.url,
+        price: metadata.price,
+      });
+
+  const resolvedCategory = providedCategory ?? categorization?.category ?? null;
 
   // If this URL was already saved (e.g. the extension re-saving an item
   // that was originally scraped server-side and got blocked by a site's
@@ -79,7 +104,7 @@ export async function saveItemForUser(
   // overwrite existing good data.
   const { data: existing } = await supabase
     .from("items")
-    .select("id, name, price, image_url, category, tags")
+    .select("id, name, price, image_url, category, tags, notes")
     .eq("user_id", userId)
     .eq("url", metadata.url)
     .maybeSingle();
@@ -91,8 +116,9 @@ export async function saveItemForUser(
         name: metadata.name ?? existing.name,
         price: metadata.price ?? existing.price,
         image_url: metadata.image_url ?? existing.image_url,
-        category: categorization?.category ?? existing.category,
+        category: resolvedCategory ?? existing.category,
         tags: categorization?.tags ?? existing.tags,
+        notes: notes ?? existing.notes,
       })
       .eq("id", existing.id)
       .select()
@@ -112,8 +138,9 @@ export async function saveItemForUser(
       name: metadata.name,
       price: metadata.price,
       image_url: metadata.image_url,
-      category: categorization?.category ?? null,
+      category: resolvedCategory,
       tags: categorization?.tags ?? [],
+      notes,
     })
     .select()
     .single();

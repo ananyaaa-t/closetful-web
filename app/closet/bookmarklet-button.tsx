@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { buildBookmarklet } from "@/lib/bookmarklet";
 
 const noopSubscribe = () => () => {};
 
@@ -22,13 +23,14 @@ export function BookmarkletButton() {
 
   if (!origin) return null;
 
-  const code = `(function(){window.open('${origin}/save?url='+encodeURIComponent(location.href),'closetful_save','width=420,height=420');})();`;
+  const code = buildBookmarklet(origin);
 
   return (
     <div className="flex w-full flex-col gap-2 rounded-lg border border-[#FDF8F9]/15 bg-[#FDF8F9]/5 p-4 text-sm">
       <p className="text-[#FDF8F9]/60">
         Drag this to your bookmarks bar, then click it on any product page to
-        save instantly — no copy-pasting URLs.
+        preview and save its main photo — no copy-pasting URLs. Especially useful
+        for stores like Amazon that block server-side previews.
       </p>
       <a
         href={`javascript:${code}`}

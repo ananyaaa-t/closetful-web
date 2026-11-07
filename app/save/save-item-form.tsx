@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { saveScrapedItem, type SavePreviewState } from "@/app/actions/items";
 import { CATEGORIES } from "@/lib/categorize";
+import { ProductImage } from "@/components/product-image";
 
 const initialState: SavePreviewState = { ok: false, error: null };
 
@@ -60,14 +61,16 @@ export function SaveItemForm({
       <input type="hidden" name="category" value={category} />
 
       <div className="flex items-center gap-3">
-        <div className="h-14 w-11 flex-shrink-0 overflow-hidden rounded-md bg-[#38040E]">
-          {imageUrl && (
-            // Arbitrary scraped host, previewed before the item is even
-            // saved.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-          )}
+        <div className="relative h-24 w-20 flex-shrink-0 overflow-hidden rounded-md bg-[#38040E]">
+          <ProductImage src={imageUrl} alt={name ?? "Product preview"} />
         </div>
+
+        {!imageUrl && (
+          <p className="text-xs leading-relaxed text-[#FDF8F9]/70">
+            The store did not provide a product photo. Use the bookmark or extension
+            from the product page to capture it; we won&apos;t substitute an unrelated image.
+          </p>
+        )}
         <div className="min-w-0">
           <p className="line-clamp-2 text-[13px] leading-snug text-[#FDF8F9]">
             {name ?? "Untitled item"}

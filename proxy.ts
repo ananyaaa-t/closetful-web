@@ -8,6 +8,10 @@ import { NextResponse, type NextRequest } from "next/server";
  * see a valid session.
  */
 export async function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === "/demo" || request.nextUrl.pathname.startsWith("/demo/")) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

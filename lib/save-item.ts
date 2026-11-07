@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { scrapeProductMetadata, type ScrapedProduct } from "@/lib/scrape";
 import { categorizeItem, CATEGORIES } from "@/lib/categorize";
 import { isRateLimited } from "@/lib/rate-limit";
+import { resolveProductImageUrl } from "@/lib/product-image";
 
 export type SaveItemResult =
   | { ok: true; item: Record<string, unknown> }
@@ -64,12 +65,17 @@ export async function saveItemForUser(
     providedMetadata &&
     (providedMetadata.name || providedMetadata.image_url || providedMetadata.price);
 
+  const providedImage = resolveProductImageUrl(providedMetadata?.image_url, parsed.href);
+  if (providedMetadata?.image_url && !providedImage) {
+    return { ok: false, error: "The photo URL must be a valid HTTP or HTTPS URL." };
+  }
+
   const metadata: ScrapedProduct = hasProvidedMetadata
     ? {
         url: parsed.toString(),
         name: providedMetadata.name ?? null,
         price: providedMetadata.price ?? null,
-        image_url: providedMetadata.image_url ?? null,
+        image_url: providedImage,
       }
     : await scrapeProductMetadata(parsed.toString());
 

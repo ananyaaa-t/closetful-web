@@ -1,10 +1,11 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import Image from "next/image";
 import { ExternalLink, X } from "lucide-react";
-import { deleteItem, updateItem, type UpdateItemState } from "@/app/actions/items";
+import { deleteItem, updateItem, refreshItemImage, type UpdateItemState } from "@/app/actions/items";
 import { hostnameFromUrl, brandFromUrl } from "@/lib/brand";
+import { ProductImage } from "@/components/product-image";
+import { resolveProductImageUrl } from "@/lib/product-image";
 
 export type Item = {
   id: string;
@@ -36,9 +37,12 @@ function CategoryTag({ label }: { label: string }) {
 export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardViewMode }) {
   const boundUpdate = updateItem.bind(null, item.id);
   const [state, formAction, pending] = useActionState(boundUpdate, initialState);
+  const [photoState, photoAction, refreshingPhoto] = useActionState(
+    refreshItemImage.bind(null, item.id),
+    initialState
+  );
   const missingDetails = !item.name || !item.image_url;
   const [editing, setEditing] = useState(false);
-  const [imgError, setImgError] = useState(false);
 
   // Deleting is permanent (hard delete, no trash/undo in the DB), so a
   // single misclick shouldn't be able to remove an item — require a
@@ -115,39 +119,33 @@ export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardVie
     </form>
   );
 
-  const addDetailsButton = missingDetails && !editing && (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        setEditing(true);
-      }}
-      className="mt-1.5 w-fit text-[10px] text-[#FDF8F9]/35 underline underline-offset-2 hover:text-[#FDF8F9]/70"
-    >
-      Add details
-    </button>
+  const addDetailsButton = !editing && (
+    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="min-h-8 text-[#FDF8F9]/70 underline underline-offset-4"
+      >
+        {missingDetails ? "Add details" : "Edit details"}
+      </button>
+      <form action={photoAction}>
+        <button
+          type="submit"
+          disabled={refreshingPhoto}
+          className="min-h-8 text-[#FDF8F9]/70 underline underline-offset-4 disabled:opacity-50"
+        >
+          {refreshingPhoto ? "Finding photo..." : "Fix photo"}
+        </button>
+      </form>
+      {photoState.error && <p role="alert" className="w-full text-red-200">{photoState.error}</p>}
+    </div>
   );
 
-  const image =
-    item.image_url && !imgError ? (
-      <Image
-        src={item.image_url}
-        alt={name}
-        fill
-        unoptimized
-        referrerPolicy="no-referrer"
-        onError={() => setImgError(true)}
-        className="object-cover transition-transform duration-700 group-hover:scale-105"
-      />
-    ) : (
-      <div className="flex h-full w-full items-center justify-center text-xs text-[#FDF8F9]/30">
-        No image
-      </div>
-    );
+  const image = <ProductImage src={resolveProductImageUrl(item.image_url, item.url)} alt={name} />;
 
   if (viewMode === "recent") {
     return (
-      <div className="group flex cursor-pointer flex-col">
+      <a href={item.url} target="_blank" rel="noopener noreferrer" className="group flex flex-col">
         <div className="relative mb-2.5 aspect-[4/5] w-full overflow-hidden bg-[#450A15]">
           {image}
           <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#38040E]/60 to-transparent" />
@@ -157,7 +155,7 @@ export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardVie
         </div>
         <p className="line-clamp-1 text-[11.5px] font-light text-[#FDF8F9]/80">{name}</p>
         {price && <p className="mt-0.5 text-[11px] text-[#FDF8F9]/45">{price}</p>}
-      </div>
+      </a>
     );
   }
 
@@ -215,10 +213,10 @@ export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardVie
           onClick={handleDeleteClick}
           disabled={isDeleting}
           aria-label={confirmingDelete ? "Confirm remove item" : "Remove from closet"}
-          className={`absolute right-2.5 top-2.5 flex h-7 items-center justify-center rounded-full bg-[#38040E]/70 backdrop-blur-sm transition-all duration-200 disabled:opacity-50 ${
+          className={`absolute right-2.5 top-2.5 flex h-11 items-center justify-center rounded-full bg-[#38040E]/70 backdrop-blur-sm transition-all duration-200 disabled:opacity-50 ${
             confirmingDelete
               ? "w-auto gap-1 bg-red-600/90 px-2 text-[10px] text-white opacity-100"
-              : "w-7 text-[#FDF8F9]/70 opacity-0 group-hover:opacity-100"
+              : "w-11 text-[#FDF8F9]/70 opacity-100 sm:opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
           }`}
         >
           {confirmingDelete ? (isDeleting ? "Removing…" : "Confirm?") : <X className="h-3 w-3" />}

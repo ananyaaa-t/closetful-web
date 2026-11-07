@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hostnameFromUrl } from "@/lib/brand";
+import { ProductImage } from "@/components/product-image";
+import { resolveProductImageUrl } from "@/lib/product-image";
 
 type SharedItem = {
   id: string;
@@ -86,17 +88,7 @@ function SharedItemCard({ item }: { item: SharedItem }) {
   return (
     <div className="flex flex-col">
       <div className="relative mb-3 aspect-[4/5] w-full overflow-hidden bg-[#450A15]">
-        {item.image_url ? (
-          // Arbitrary scraped hosts aren't worth allow-listing in
-          // next/image config for a read-only public page with no
-          // interactivity to protect.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.image_url} alt={name} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-xs text-[#FDF8F9]/30">
-            No image
-          </div>
-        )}
+        <ProductImage src={resolveProductImageUrl(item.image_url, item.url)} alt={name} />
       </div>
       <div className="flex flex-1 flex-col gap-1.5 px-0.5">
         {item.category && (

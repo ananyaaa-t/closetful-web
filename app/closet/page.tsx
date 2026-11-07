@@ -19,6 +19,7 @@ export default async function ClosetPage() {
   const { data: items } = await supabase
     .from("items")
     .select("*")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   // Ensures a share profile row exists so the "Share Closet" panel always

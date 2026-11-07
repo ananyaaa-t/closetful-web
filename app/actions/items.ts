@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { categorizeItem } from "@/lib/categorize";
 import { saveItemForUser } from "@/lib/save-item";
+import { scrapeProductMetadata } from "@/lib/scrape";
+import { resolveProductImageUrl } from "@/lib/product-image";
 
 export type SaveItemState = {
   error: string | null;
@@ -145,6 +147,11 @@ export async function updateItem(
     .eq("user_id", user.id)
     .single();
 
+  const resolvedImage = existing?.url ? resolveProductImageUrl(imageUrl, existing.url) : null;
+  if (imageUrl && !resolvedImage) {
+    return { error: "The photo URL must be a valid HTTP or HTTPS URL." };
+  }
+
   let category = existing?.category ?? null;
   let tags: string[] | undefined;
   if (name && !category && existing?.url) {
@@ -157,7 +164,7 @@ export async function updateItem(
 
   const { error } = await supabase
     .from("items")
-    .update({ name, image_url: imageUrl, price, category, ...(tags ? { tags } : {}) })
+    .update({ name, image_url: resolvedImage, price, category, ...(tags ? { tags } : {}) })
     .eq("id", id)
     .eq("user_id", user.id);
 
@@ -165,6 +172,37 @@ export async function updateItem(
     return { error: error.message };
   }
 
+  revalidatePath("/closet");
+  return { error: null };
+}
+
+export async function refreshItemImage(
+  id: string
+): Promise<UpdateItemState> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be logged in to fix a photo." };
+
+  const { data: item, error: readError } = await supabase
+    .from("items")
+    .select("url")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+  if (readError || !item) return { error: readError?.message ?? "Item not found." };
+
+  const scraped = await scrapeProductMetadata(item.url);
+  if (!scraped.image_url) {
+    return {
+      error: "This store isn't sharing a product photo. Open the product page and use the Save to Closetful bookmark or extension to capture its main photo, then save it again.",
+    };
+  }
+
+  const { error } = await supabase.from("items")
+    .update({ image_url: scraped.image_url })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { error: error.message };
   revalidatePath("/closet");
   return { error: null };
 }

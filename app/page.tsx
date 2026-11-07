@@ -17,15 +17,15 @@ export default function Home() {
             closetful.
           </h1>
           <p className="max-w-md text-lg leading-8 text-white/60">
-            Save anything you want from anywhere on the internet, organized
-            automatically in one place.
+            All your wishlists, one place. Save what catches your eye, then
+            compare your favorites and choose what&apos;s actually worth buying.
           </p>
           <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
             <Link
               className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-5 text-black transition-colors hover:bg-white/85 md:w-[158px]"
-              href="/signup"
+              href="/demo"
             >
-              Get started
+              Try the demo
             </Link>
             <Link
               className="flex h-12 w-full items-center justify-center rounded-full border border-white/25 px-5 text-white transition-colors hover:border-white/60 md:w-[158px]"

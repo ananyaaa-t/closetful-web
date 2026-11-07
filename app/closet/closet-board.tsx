@@ -7,6 +7,7 @@ import { PasteUrlForm } from "@/app/closet/paste-url-form";
 import { BookmarkletButton } from "@/app/closet/bookmarklet-button";
 import { ShareClosetButton } from "@/app/closet/share-closet-button";
 import { brandFromUrl } from "@/lib/brand";
+import { DecisionDesk } from "@/components/decision-desk";
 
 type ViewMode = "grid" | "list";
 
@@ -80,6 +81,7 @@ export function ClosetBoard({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [choosing, setChoosing] = useState(false);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { All: items.length };
@@ -119,7 +121,7 @@ export function ClosetBoard({
     <>
       {/* Top header */}
       <header className="sticky top-0 z-20 border-b border-[#FDF8F9]/6 bg-[#38040E]/95 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between gap-4 px-6 lg:px-8">
+        <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-5 py-3 lg:px-8">
           <div className="flex items-center gap-6">
             <button
               onClick={() => setSidebarOpen((v) => !v)}
@@ -133,12 +135,13 @@ export function ClosetBoard({
             </h1>
           </div>
 
-          <div className="mx-8 hidden max-w-xs flex-1 sm:block">
+          <div className="order-last w-full sm:order-none sm:mx-4 sm:max-w-xs sm:flex-1">
             <div className="relative">
               <Search className="absolute left-0 top-1/2 h-3 w-3 -translate-y-1/2 text-[#FDF8F9]/30" />
               <input
                 type="search"
-                placeholder="search your closet"
+                placeholder="Search your closet"
+                aria-label="Search your closet"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full border-b border-[#FDF8F9]/15 bg-transparent pb-0.5 pl-5 text-[11.5px] tracking-wide text-[#FDF8F9] outline-none transition-colors placeholder:text-[#FDF8F9]/30 focus:border-[#FDF8F9]/50"
@@ -150,7 +153,7 @@ export function ClosetBoard({
             <button
               type="button"
               onClick={() => setAddOpen((v) => !v)}
-              className="hidden text-[10px] uppercase tracking-[0.15em] text-[#FDF8F9]/50 transition-colors hover:text-[#FDF8F9]/85 sm:block"
+              className="min-h-11 whitespace-nowrap text-xs text-[#FDF8F9]/85 transition-colors hover:text-[#FDF8F9]"
             >
               {addOpen ? "Close" : "+ Add"}
             </button>
@@ -259,6 +262,20 @@ export function ClosetBoard({
 
         {/* Main content */}
         <main className="min-w-0 flex-1 px-6 py-8 lg:px-8">
+          <nav aria-label="Closet views" className="mb-8 flex gap-3">
+            <button type="button" aria-pressed={!choosing} onClick={() => setChoosing(false)}
+              className={`min-h-11 rounded-full border px-4 text-sm ${!choosing ? "border-[#FDF8F9] bg-[#FDF8F9] text-[#38040E]" : "border-[#FDF8F9]/30"}`}>
+              My closet
+            </button>
+            <button type="button" aria-pressed={choosing} onClick={() => setChoosing(true)}
+              className={`min-h-11 rounded-full border px-4 text-sm ${choosing ? "border-[#FDF8F9] bg-[#FDF8F9] text-[#38040E]" : "border-[#FDF8F9]/30"}`}>
+              Help me choose
+            </button>
+          </nav>
+          <div hidden={!choosing}><DecisionDesk items={items.filter((item) => !search.trim() ||
+            [item.name, item.category, ...item.tags].some((value) => value?.toLowerCase().includes(search.trim().toLowerCase()))
+          )} /></div>
+          <div hidden={choosing}>
           {/* Recently Added */}
           {showRecentlyAdded && (
             <section className="mb-12">
@@ -329,6 +346,7 @@ export function ClosetBoard({
               )}
             </div>
           )}
+          </div>
         </main>
       </div>
     </>

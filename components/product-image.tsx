@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ImageOff, RotateCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function ProductImage({
   src,
@@ -21,13 +22,15 @@ export function ProductImage({
         <ImageOff aria-hidden="true" className="h-5 w-5" />
         <span>{src ? "Photo couldn't load" : "Photo unavailable"}</span>
         {src && (
-          <button
+          <Button
             type="button"
+            variant="link"
+            size="sm"
             onClick={() => setFailedSource(null)}
-            className="inline-flex min-h-8 items-center gap-1 underline underline-offset-4"
+            className="h-auto min-h-8 whitespace-normal px-1 text-xs"
           >
             <RotateCw aria-hidden="true" className="h-3 w-3" /> Retry photo
-          </button>
+          </Button>
         )}
       </div>
     );

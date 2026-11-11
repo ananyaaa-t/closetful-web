@@ -58,6 +58,26 @@ test("mobile has working product photos, visible search/add, and no page-level o
   await expect(page.getByText("No matches. Try another search.")).toBeVisible();
 });
 
+test("decision filters support keyboard disclosure without losing their values", async ({ page }) => {
+  await page.goto("/demo");
+  await page.getByRole("button", { name: "Help me choose", exact: true }).click();
+  await page.getByLabel("Compare within").selectOption("clothing");
+  await page.getByLabel("Maximum price per item ($)").fill("100");
+  await page.getByLabel("Put first").selectOption("price");
+  await page.getByRole("button", { name: "neutral", exact: true }).click();
+
+  const filters = page.getByRole("button", { name: "Fine-tune category, budget and priorities" });
+  await filters.press("Enter");
+  await expect(page.getByLabel("Maximum price per item ($)")).toBeHidden();
+  await expect(filters).toBeFocused();
+  await filters.press("Enter");
+  await expect(page.getByLabel("Maximum price per item ($)")).toBeVisible();
+  await expect(page.getByLabel("Maximum price per item ($)")).toHaveValue("100");
+  await expect(page.getByLabel("Compare within")).toHaveValue("clothing");
+  await expect(page.getByLabel("Put first")).toHaveValue("price");
+  await expect(page.getByRole("button", { name: "neutral", exact: true })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("a failed photo is explicit and can be retried without a generic replacement", async ({ page }) => {
   let fail = true;
   await page.route("**/demo/coat.jpg", async (route) => {

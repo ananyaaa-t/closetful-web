@@ -45,6 +45,13 @@ All shown pieces, prices and notes are illustrative. Photos use the
   server-side anti-bot protection (Akamai, DataDome) that blocks
   traditional scraping on sites like Sephora and Etsy.
 - **Brand filtering + search** across your saved closet.
+- **Personalized Explore.** A mix of familiar shops and similar new brands,
+  based on saved pieces and the last 30 days of shopping links opened inside
+  Closetful. Each suggestion explains its source. Matching uses a curated
+  brand directory, not invented AI storefronts or tracking across other sites.
+  Shop visits are stored per account with owner-only access; clearing click
+  history leaves saved pieces untouched. A fresh account gets an explicitly
+  non-personalized starter selection.
 - **Auto-login bridge.** Logging into the web app automatically signs the
   Chrome extension in too, via Chrome's `externally_connectable` messaging
   — no separate login required.
@@ -81,6 +88,13 @@ including sensitive information in it.
 The current AI rate limiter is best-effort and per-instance. Public deployments
 should use shared quotas/abuse controls before exposing anonymous demo AI at scale.
 
+Apply the migrations in `supabase/migrations/` before deploying. Personalized
+Explore uses the `shopping_activity` table added by
+`20261111000000_add_shopping_activity.sql`. It stores shop domains and visit
+timestamps, not product URLs, and never collects browser history. The UI
+explicitly reports unavailable history or unsuccessful writes rather than
+pretending those events contributed to recommendations.
+
 Product photos prefer Product JSON-LD and Amazon's main image over generic
 social previews. For stores that block server requests, the bookmarklet captures
 the main photo from the open product page. Re-save an existing item using its
@@ -95,12 +109,26 @@ the recorded demo was additionally verified against live Gemini.
 ## Tech stack
 
 - **Frontend/Backend:** Next.js 16 (App Router, Server Actions, Route
-  Handlers), TypeScript, Tailwind CSS
+  Handlers), TypeScript, Tailwind CSS, shadcn/ui (Radix)
 - **Database & Auth:** Supabase (Postgres with Row-Level Security,
   Supabase Auth)
 - **AI:** Google Gemini (structured categorization and constrained catalog-ID generation)
 - **Browser extension:** Chrome Extension (Manifest V3), vanilla JS +
   React popup, Parcel bundler
+
+### UI components
+
+Use the shared shadcn primitives in `components/ui/` for buttons, inputs,
+labels, cards, badges, disclosures, popovers, switches, alerts, and tables.
+Button-styled links use `<Button asChild><Link ... /></Button>` to preserve
+navigation semantics. Buttons inside forms explicitly declare their type.
+
+The burgundy and rose palette is configured with semantic tokens in `app/globals.css`;
+shared controls inherit it instead of defining their own colors. Add new
+primitives with `npx shadcn@latest add <component>`. Default buttons and inputs
+use 44px targets, with compact button sizes available for secondary actions.
+ESLint enforces shared primitives outside `components/ui/`; native hidden
+inputs remain allowed for Server Action form data.
 
 ## Project structure
 

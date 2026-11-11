@@ -4,6 +4,7 @@ import { scrapeProductMetadata } from "@/lib/scrape";
 import { categorizeItem } from "@/lib/categorize";
 import { SaveItemForm } from "@/app/save/save-item-form";
 import { resolveProductImageUrl } from "@/lib/product-image";
+import { Button } from "@/components/ui/button";
 
 /** Pulls the first http(s) URL out of arbitrary shared text. Android's
  * native share sheet often puts the link inside `text` (e.g. "Check this
@@ -30,7 +31,7 @@ function extractUrl(url?: string, text?: string): string | undefined {
 export default async function SavePage({
   searchParams,
 }: {
-  searchParams: Promise<{ url?: string; text?: string; name?: string; image_url?: string; price?: string }>;
+  searchParams: Promise<{ url?: string; text?: string; name?: string; image_url?: string; price?: string; }>;
 }) {
   const params = await searchParams;
   const url = extractUrl(params.url, params.text);
@@ -44,12 +45,13 @@ export default async function SavePage({
     return (
       <Shell>
         <p className="text-[#FDF8F9]">You need to be logged in to save items.</p>
-        <Link
-          href={`/login?message=Log in, then click the Save button again on the product page.`}
-          className="text-sm font-medium text-[#FDF8F9] underline"
-        >
-          Log in
-        </Link>
+        <Button asChild variant="link">
+          <Link
+            href={`/login?message=Log in, then click the Save button again on the product page.`}
+          >
+            Log in
+          </Link>
+        </Button>
       </Shell>
     );
   }
@@ -75,11 +77,11 @@ export default async function SavePage({
   const capturedPrice = Number.parseFloat((params.price ?? "").replace(/[^0-9.]/g, ""));
   const scraped = capturedImage && capturedName
     ? {
-        url,
-        name: capturedName,
-        image_url: capturedImage,
-        price: Number.isFinite(capturedPrice) ? capturedPrice : null,
-      }
+      url,
+      name: capturedName,
+      image_url: capturedImage,
+      price: Number.isFinite(capturedPrice) ? capturedPrice : null,
+    }
     : await scrapeProductMetadata(url);
   const categorization = await categorizeItem({
     name: scraped.name,
@@ -100,7 +102,7 @@ export default async function SavePage({
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children }: { children: React.ReactNode; }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#38040E] px-6 py-10 text-center font-sans text-[#FDF8F9] selection:bg-[#FDF8F9]/15">
       {children}

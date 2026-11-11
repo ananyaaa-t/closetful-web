@@ -6,6 +6,11 @@ import { deleteItem, updateItem, refreshItemImage, type UpdateItemState } from "
 import { hostnameFromUrl, brandFromUrl } from "@/lib/brand";
 import { ProductImage } from "@/components/product-image";
 import { resolveProductImageUrl } from "@/lib/product-image";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 export type Item = {
   id: string;
@@ -26,15 +31,15 @@ const initialState: UpdateItemState = { error: null };
 // to the normal × button, if the user doesn't click again.
 const CONFIRM_TIMEOUT_MS = 3000;
 
-function CategoryTag({ label }: { label: string }) {
+function CategoryTag({ label }: { label: string; }) {
   return (
-    <span className="inline-block w-fit rounded-sm bg-[#FDF8F9]/10 px-2 py-0.5 text-[9px] uppercase tracking-[0.18em] text-[#FDF8F9]/70 capitalize">
+    <Badge variant="secondary" className="capitalize">
       {label}
-    </span>
+    </Badge>
   );
 }
 
-export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardViewMode }) {
+export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardViewMode; }) {
   const boundUpdate = updateItem.bind(null, item.id);
   const [state, formAction, pending] = useActionState(boundUpdate, initialState);
   const [photoState, photoAction, refreshingPhoto] = useActionState(
@@ -79,65 +84,70 @@ export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardVie
 
   const editForm = editing && (
     <form action={formAction} className="mt-2 flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
-      <input
+      <Input
         name="name"
+        aria-label="Item name"
         defaultValue={item.name ?? ""}
         placeholder="Item name"
-        className="rounded-sm border border-[#FDF8F9]/15 bg-transparent px-2 py-1 text-xs text-[#FDF8F9] outline-none placeholder:text-[#FDF8F9]/30 focus:border-[#FDF8F9]/40"
       />
-      <input
+      <Input
         name="price"
+        aria-label="Price"
         type="number"
         step="0.01"
         defaultValue={item.price ?? ""}
         placeholder="Price"
-        className="rounded-sm border border-[#FDF8F9]/15 bg-transparent px-2 py-1 text-xs text-[#FDF8F9] outline-none placeholder:text-[#FDF8F9]/30 focus:border-[#FDF8F9]/40"
       />
-      <input
+      <Input
         name="image_url"
+        aria-label="Image URL"
         defaultValue={item.image_url ?? ""}
         placeholder="Image URL"
-        className="rounded-sm border border-[#FDF8F9]/15 bg-transparent px-2 py-1 text-xs text-[#FDF8F9] outline-none placeholder:text-[#FDF8F9]/30 focus:border-[#FDF8F9]/40"
       />
-      {state.error && <p className="text-xs text-red-300">{state.error}</p>}
+      {state.error && <Alert variant="destructive"><AlertDescription>{state.error}</AlertDescription></Alert>}
       <div className="flex gap-1.5">
-        <button
+        <Button
           type="submit"
+          size="sm"
           disabled={pending}
-          className="rounded-full bg-[#FDF8F9] px-3 py-1 text-xs font-medium text-[#38040E] disabled:opacity-50"
         >
           {pending ? "Saving…" : "Save"}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={() => setEditing(false)}
-          className="rounded-full border border-[#FDF8F9]/20 px-3 py-1 text-xs text-[#FDF8F9]/70"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
 
   const addDetailsButton = !editing && (
     <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
-      <button
+      <Button
         type="button"
+        variant="link"
+        size="sm"
         onClick={() => setEditing(true)}
-        className="min-h-8 text-[#FDF8F9]/70 underline underline-offset-4"
+        className="px-0"
       >
         {missingDetails ? "Add details" : "Edit details"}
-      </button>
+      </Button>
       <form action={photoAction}>
-        <button
+        <Button
           type="submit"
+          variant="link"
+          size="sm"
           disabled={refreshingPhoto}
-          className="min-h-8 text-[#FDF8F9]/70 underline underline-offset-4 disabled:opacity-50"
+          className="px-0"
         >
           {refreshingPhoto ? "Finding photo..." : "Fix photo"}
-        </button>
+        </Button>
       </form>
-      {photoState.error && <p role="alert" className="w-full text-red-200">{photoState.error}</p>}
+      {photoState.error && <Alert variant="destructive"><AlertDescription>{photoState.error}</AlertDescription></Alert>}
     </div>
   );
 
@@ -145,7 +155,7 @@ export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardVie
 
   if (viewMode === "recent") {
     return (
-      <a href={item.url} target="_blank" rel="noopener noreferrer" className="group flex flex-col">
+      <a href={item.url} target="_blank" rel="noopener noreferrer" data-shopping-link className="group flex flex-col">
         <div className="relative mb-2.5 aspect-[4/5] w-full overflow-hidden bg-[#450A15]">
           {image}
           <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#38040E]/60 to-transparent" />
@@ -178,51 +188,51 @@ export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardVie
         {price && (
           <span className="w-20 flex-shrink-0 text-right text-[13px] font-medium text-[#FDF8F9]">{price}</span>
         )}
-        <button
+        <Button
           type="button"
+          variant={confirmingDelete ? "destructive" : "ghost"}
+          size="sm"
           onClick={handleDeleteClick}
           disabled={isDeleting}
           aria-label={confirmingDelete ? "Confirm remove item" : "Remove item"}
-          className={`flex-shrink-0 rounded-full text-[10px] uppercase tracking-widest transition-all disabled:opacity-50 ${
-            confirmingDelete
-              ? "bg-red-600 px-2 py-1 text-white hover:bg-red-500"
-              : "text-[#FDF8F9]/30 hover:text-[#FDF8F9]/70"
-          }`}
         >
           {confirmingDelete ? (isDeleting ? "Removing…" : "Confirm?") : "Remove"}
-        </button>
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex flex-shrink-0 items-center gap-1 text-[10px] uppercase tracking-widest text-[#FDF8F9]/40 transition-colors hover:text-[#FDF8F9]/80"
-        >
-          Open <ExternalLink className="h-2.5 w-2.5" />
-        </a>
+        </Button>
+        <Button asChild variant="ghost" size="sm">
+          <a
+            href={item.url}
+            data-shopping-link
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open <ExternalLink className="h-2.5 w-2.5" />
+          </a>
+        </Button>
       </div>
     );
   }
 
   // Grid view (default)
   return (
-    <div className="group flex cursor-pointer flex-col">
+    <Card className="group gap-0 p-0">
       <div className="relative mb-3 aspect-[4/5] w-full overflow-hidden bg-[#450A15]">
         {image}
-        <button
+        <Button
           type="button"
+          variant={confirmingDelete ? "destructive" : "secondary"}
+          size={confirmingDelete ? "sm" : "icon"}
           onClick={handleDeleteClick}
           disabled={isDeleting}
           aria-label={confirmingDelete ? "Confirm remove item" : "Remove from closet"}
-          className={`absolute right-2.5 top-2.5 flex h-11 items-center justify-center rounded-full bg-[#38040E]/70 backdrop-blur-sm transition-all duration-200 disabled:opacity-50 ${
-            confirmingDelete
-              ? "w-auto gap-1 bg-red-600/90 px-2 text-[10px] text-white opacity-100"
-              : "w-11 text-[#FDF8F9]/70 opacity-100 sm:opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-          }`}
+          className={`absolute right-2.5 top-2.5 ${confirmingDelete
+              ? "opacity-100"
+              : "opacity-100 sm:opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+            }`}
         >
           {confirmingDelete ? (isDeleting ? "Removing…" : "Confirm?") : <X className="h-3 w-3" />}
-        </button>
+        </Button>
       </div>
-      <div className="flex flex-1 flex-col gap-1.5 px-0.5">
+      <div className="flex flex-1 flex-col gap-1.5 px-3 pb-4">
         <CategoryTag label={category} />
         <h3 className="mt-0.5 line-clamp-2 text-[12.5px] font-light leading-snug text-[#FDF8F9]/90">
           {name}
@@ -236,15 +246,17 @@ export function ItemCard({ item, viewMode }: { item: Item; viewMode: ItemCardVie
         )}
         {editForm}
         {addDetailsButton}
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 flex items-center justify-center gap-1.5 border border-[#FDF8F9]/12 py-1.5 text-[10px] uppercase tracking-[0.15em] text-[#FDF8F9]/60 transition-all duration-200 hover:border-[#FDF8F9]/30 hover:text-[#FDF8F9]/90"
-        >
-          Open <ExternalLink className="h-2.5 w-2.5" />
-        </a>
+        <Button asChild variant="outline" className="mt-2">
+          <a
+            href={item.url}
+            data-shopping-link
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open <ExternalLink className="h-2.5 w-2.5" />
+          </a>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }

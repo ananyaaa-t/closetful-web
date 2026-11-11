@@ -1,4 +1,5 @@
 import { signInWithGoogle } from "@/app/actions/auth";
+import { Button } from "@/components/ui/button";
 
 /** "Continue with Google" button used on both login and signup forms.
  * Requires the Google provider to be enabled in the Supabase dashboard
@@ -6,9 +7,10 @@ import { signInWithGoogle } from "@/app/actions/auth";
 export function GoogleButton() {
   return (
     <form action={signInWithGoogle}>
-      <button
+      <Button
         type="submit"
-        className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/[0.03] text-sm font-medium text-white transition-colors hover:border-white/30 hover:bg-white/[0.06]"
+        variant="outline"
+        className="w-full"
       >
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
           <path
@@ -17,7 +19,7 @@ export function GoogleButton() {
           />
         </svg>
         Continue with Google
-      </button>
+      </Button>
     </form>
   );
 }

@@ -2,8 +2,10 @@
 
 import { useSyncExternalStore } from "react";
 import { buildBookmarklet } from "@/lib/bookmarklet";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
-const noopSubscribe = () => () => {};
+const noopSubscribe = () => () => { };
 
 /**
  * Draggable "Save to Closetful" bookmarklet. Captures the current page's
@@ -26,20 +28,22 @@ export function BookmarkletButton() {
   const code = buildBookmarklet(origin);
 
   return (
-    <div className="flex w-full flex-col gap-2 rounded-lg border border-[#FDF8F9]/15 bg-[#FDF8F9]/5 p-4 text-sm">
+    <Card className="w-full gap-2 p-4">
       <p className="text-[#FDF8F9]/60">
         Drag this to your bookmarks bar, then click it on any product page to
         preview and save its main photo — no copy-pasting URLs. Especially useful
         for stores like Amazon that block server-side previews.
       </p>
-      <a
-        href={`javascript:${code}`}
-        onClick={(e) => e.preventDefault()}
-        draggable
-        className="w-fit cursor-grab rounded-full bg-[#FDF8F9] px-4 py-2 text-xs font-medium text-[#38040E] active:cursor-grabbing"
-      >
-        + Save to Closetful
-      </a>
-    </div>
+      <Button asChild className="w-fit">
+        <a
+          href={`javascript:${code}`}
+          onClick={(e) => e.preventDefault()}
+          draggable
+          className="cursor-grab active:cursor-grabbing"
+        >
+          + Save to Closetful
+        </a>
+      </Button>
+    </Card>
   );
 }

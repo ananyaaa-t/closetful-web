@@ -2,6 +2,9 @@
 
 import { useActionState, useRef, useEffect } from "react";
 import { saveItem, type SaveItemState } from "@/app/actions/items";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const initialState: SaveItemState = { error: null };
 
@@ -21,22 +24,24 @@ export function PasteUrlForm() {
       action={formAction}
       className="flex w-full flex-col gap-2 sm:flex-row"
     >
-      <input
+      <Input
         name="url"
         type="url"
         required
         placeholder="Paste a product URL…"
-        className="flex-1 rounded-lg border border-[#FDF8F9]/15 bg-transparent px-3 py-2.5 text-sm text-[#FDF8F9] outline-none placeholder:text-[#FDF8F9]/40 focus:border-[#FDF8F9]/40"
+        aria-label="Product URL"
+        className="h-11 flex-1"
       />
-      <button
+      <Button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-[#FDF8F9] px-5 py-2.5 text-sm font-medium text-[#38040E] transition-colors hover:bg-[#FDF8F9]/85 disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save"}
-      </button>
+      </Button>
       {state.error && (
-        <p className="text-sm text-red-300 sm:absolute sm:mt-12">{state.error}</p>
+        <Alert variant="destructive" className="sm:absolute sm:mt-12">
+          <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
       )}
     </form>
   );

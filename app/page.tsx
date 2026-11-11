@@ -4,6 +4,7 @@ import { PageBackground } from "@/components/page-background";
 import { ClosetMockup } from "@/components/closet-mockup";
 import { FeatureHighlights } from "@/components/feature-highlights";
 import { SaveMethods } from "@/components/save-methods";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
@@ -21,18 +22,12 @@ export default function Home() {
             compare your favorites and choose what&apos;s actually worth buying.
           </p>
           <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-            <Link
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-5 text-black transition-colors hover:bg-white/85 md:w-[158px]"
-              href="/demo"
-            >
-              Try the demo
-            </Link>
-            <Link
-              className="flex h-12 w-full items-center justify-center rounded-full border border-white/25 px-5 text-white transition-colors hover:border-white/60 md:w-[158px]"
-              href="/login"
-            >
-              Log in
-            </Link>
+            <Button asChild size="lg" className="w-full md:w-[158px]">
+              <Link href="/demo">Try the demo</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="w-full md:w-[158px]">
+              <Link href="/login">Log in</Link>
+            </Button>
           </div>
         </div>
 

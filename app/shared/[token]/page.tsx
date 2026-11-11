@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { hostnameFromUrl } from "@/lib/brand";
 import { ProductImage } from "@/components/product-image";
 import { resolveProductImageUrl } from "@/lib/product-image";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 type SharedItem = {
   id: string;
@@ -81,20 +84,20 @@ export default async function SharedClosetPage({
   );
 }
 
-function SharedItemCard({ item }: { item: SharedItem }) {
+function SharedItemCard({ item }: { item: SharedItem; }) {
   const price = item.price !== null ? `$${item.price.toFixed(2)}` : null;
   const name = item.name ?? "Untitled item";
 
   return (
-    <div className="flex flex-col">
+    <Card className="gap-0 p-0">
       <div className="relative mb-3 aspect-[4/5] w-full overflow-hidden bg-[#450A15]">
         <ProductImage src={resolveProductImageUrl(item.image_url, item.url)} alt={name} />
       </div>
-      <div className="flex flex-1 flex-col gap-1.5 px-0.5">
+      <div className="flex flex-1 flex-col gap-1.5 px-3 pb-4">
         {item.category && (
-          <span className="inline-block w-fit rounded-sm bg-[#FDF8F9]/10 px-2 py-0.5 text-[9px] uppercase tracking-[0.18em] text-[#FDF8F9]/70 capitalize">
+          <Badge variant="secondary" className="capitalize">
             {item.category}
-          </span>
+          </Badge>
         )}
         <h3 className="mt-0.5 line-clamp-2 text-[12.5px] font-light leading-snug text-[#FDF8F9]/90">
           {name}
@@ -103,20 +106,21 @@ function SharedItemCard({ item }: { item: SharedItem }) {
           {price && <span className="text-[13px] font-medium text-[#FDF8F9]">{price}</span>}
           <span className="tracking-wide text-[10px] text-[#FDF8F9]/35">{hostnameFromUrl(item.url)}</span>
         </div>
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 flex items-center justify-center gap-1.5 border border-[#FDF8F9]/12 py-1.5 text-[10px] uppercase tracking-[0.15em] text-[#FDF8F9]/60 transition-all duration-200 hover:border-[#FDF8F9]/30 hover:text-[#FDF8F9]/90"
-        >
-          Open
-        </a>
+        <Button asChild variant="outline" className="mt-2">
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open
+          </a>
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children }: { children: React.ReactNode; }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#38040E] px-6 py-10 text-center">
       {children}

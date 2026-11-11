@@ -1,4 +1,6 @@
-const FEATURES: { title: string; description: string; icon: string }[] = [
+import { Card } from "@/components/ui/card";
+
+const FEATURES: { title: string; description: string; icon: string; }[] = [
   {
     icon: "✦",
     title: "AI auto-categorization",
@@ -25,16 +27,16 @@ export function FeatureHighlights() {
   return (
     <section className="grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3">
       {FEATURES.map((feature) => (
-        <div
+        <Card
           key={feature.title}
-          className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-left"
+          className="gap-3 p-6 text-left"
         >
           <span className="text-2xl text-white/80">{feature.icon}</span>
           <h3 className="text-sm font-semibold text-white">{feature.title}</h3>
           <p className="text-sm leading-6 text-white/50">
             {feature.description}
           </p>
-        </div>
+        </Card>
       ))}
     </section>
   );

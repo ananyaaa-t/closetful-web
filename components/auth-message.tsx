@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 /** Renders the `?message=` query param as an informational banner —
  * used for the post-signup "check your email" prompt and for graceful
@@ -13,8 +14,8 @@ export function AuthMessage() {
   if (!message) return null;
 
   return (
-    <p className="mb-4 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/70">
-      {message}
-    </p>
+    <Alert role="status" className="mb-4">
+      <AlertDescription>{message}</AlertDescription>
+    </Alert>
   );
 }

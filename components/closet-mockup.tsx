@@ -1,13 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { DEMO_CATALOG } from "@/lib/demo-catalog";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export function ClosetMockup() {
   return (
-    <div className="w-full max-w-3xl rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/40 backdrop-blur-sm sm:p-6">
+    <Card className="w-full max-w-3xl gap-0 p-4 shadow-2xl shadow-black/40 sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <span className="text-xs text-white/65">A sample closet. Try it for yourself.</span>
-        <Link href="/demo" className="min-h-10 py-2 text-xs text-white underline underline-offset-4">Open demo</Link>
+        <Button asChild variant="link" size="sm"><Link href="/demo">Open demo</Link></Button>
       </div>
       <div className="grid grid-cols-3 gap-3 sm:gap-4 md:grid-cols-6">
         {DEMO_CATALOG.slice(0, 6).map((item) => (
@@ -22,6 +24,6 @@ export function ClosetMockup() {
         ))}
       </div>
       <p className="mt-3 text-xs text-white/50">Illustrative pieces and prices. Licensed stock photos, not live listings.</p>
-    </div>
+    </Card>
   );
 }

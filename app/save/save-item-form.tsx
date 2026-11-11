@@ -1,10 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useId, useState } from "react";
 import Link from "next/link";
 import { saveScrapedItem, type SavePreviewState } from "@/app/actions/items";
 import { CATEGORIES } from "@/lib/categorize";
 import { ProductImage } from "@/components/product-image";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const initialState: SavePreviewState = { ok: false, error: null };
 
@@ -27,6 +31,7 @@ export function SaveItemForm({
 }) {
   const [state, formAction, pending] = useActionState(saveScrapedItem, initialState);
   const [category, setCategory] = useState(suggestedCategory ?? "other");
+  const notesId = useId();
 
   if (state.ok) {
     return (
@@ -38,12 +43,13 @@ export function SaveItemForm({
         <p className="line-clamp-2 text-sm text-[#FDF8F9]/50">
           {name ?? "This item"} has been catalogued under {labelFor(category)}.
         </p>
-        <Link
-          href="/closet"
-          className="mt-2 text-sm font-medium text-[#FDF8F9] underline underline-offset-2"
-        >
-          Go to your closet
-        </Link>
+        <Button asChild variant="link">
+          <Link
+            href="/closet"
+          >
+            Go to your closet
+          </Link>
+        </Button>
         <p className="text-xs text-[#FDF8F9]/30">You can close this window.</p>
       </div>
     );
@@ -87,43 +93,41 @@ export function SaveItemForm({
         </p>
         <div className="flex flex-wrap gap-1.5">
           {CATEGORIES.map((c) => (
-            <button
+            <Button
               key={c}
               type="button"
+              size="sm"
+              variant={category === c ? "default" : "outline"}
+              aria-pressed={category === c}
               onClick={() => setCategory(c)}
-              className={`rounded-full border px-2.5 py-1 text-[11px] transition-colors ${
-                category === c
-                  ? "border-[#FDF8F9] bg-[#FDF8F9] text-[#38040E]"
-                  : "border-[#FDF8F9]/20 text-[#FDF8F9]/60 hover:border-[#FDF8F9]/40"
-              }`}
             >
               {labelFor(c)}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
       <div>
-        <label className="mb-2 block text-[9px] uppercase tracking-[0.18em] text-[#FDF8F9]/35">
+        <Label htmlFor={notesId} className="mb-2">
           Notes
-        </label>
-        <textarea
+        </Label>
+        <Textarea
+          id={notesId}
           name="notes"
           placeholder="Add a note (e.g. would look great with the Toteme coat)…"
           rows={3}
-          className="w-full resize-none rounded-md border border-[#FDF8F9]/15 bg-[#38040E] px-2.5 py-2 text-[13px] text-[#FDF8F9] outline-none placeholder:text-[#FDF8F9]/30 focus:border-[#FDF8F9]/40"
+          className="resize-none"
         />
       </div>
 
-      {state.error && <p className="text-sm text-red-300">{state.error}</p>}
+      {state.error && <Alert variant="destructive"><AlertDescription>{state.error}</AlertDescription></Alert>}
 
-      <button
+      <Button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-[#FDF8F9] py-2.5 text-sm font-medium text-[#38040E] transition-colors hover:bg-[#FDF8F9]/85 disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save to my Closet"}
-      </button>
+      </Button>
     </form>
   );
 }

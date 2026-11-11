@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
 import { Search, LayoutGrid, List, ChevronRight, Bookmark } from "lucide-react";
 import { ItemCard, type Item } from "@/app/closet/item-card";
 import { PasteUrlForm } from "@/app/closet/paste-url-form";
@@ -8,24 +8,19 @@ import { BookmarkletButton } from "@/app/closet/bookmarklet-button";
 import { ShareClosetButton } from "@/app/closet/share-closet-button";
 import { brandFromUrl } from "@/lib/brand";
 import { DecisionDesk } from "@/components/decision-desk";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { ExploreBrands } from "@/components/explore-brands";
+import { recommendBrands, type ShoppingVisit } from "@/lib/brand-recommendations";
+import { useShoppingActivity } from "@/app/closet/use-shopping-activity";
 
 type ViewMode = "grid" | "list";
 
-// Curated brands shown as quick jump-off links to help users find something
-// worth saving — clicking opens the brand's site in a new tab, then the
-// bookmarklet (or paste-URL form) captures it back into the closet.
-const EXPLORE_BRANDS: { label: string; url: string }[] = [
-  { label: "Acne Studios", url: "https://www.acnestudios.com" },
-  { label: "Miu Miu", url: "https://www.miumiu.com" },
-  { label: "The Row", url: "https://www.therow.com" },
-  { label: "Khaite", url: "https://www.khaite.com" },
-  { label: "Bottega Veneta", url: "https://www.bottegaveneta.com" },
-  { label: "Toteme", url: "https://toteme-studio.com" },
-];
-
 const EXTENSION_URL = "https://github.com/ananyaaa-t/closetful-extension";
 
-function EmptyState({ hasItems, onAdd }: { hasItems: boolean; onAdd: () => void }) {
+function EmptyState({ hasItems, onAdd }: { hasItems: boolean; onAdd: () => void; }) {
   return (
     <div className="col-span-full flex flex-col items-center justify-center py-28 text-center">
       <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[#FDF8F9]/10">
@@ -41,21 +36,22 @@ function EmptyState({ hasItems, onAdd }: { hasItems: boolean; onAdd: () => void 
       </p>
       {!hasItems && (
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onAdd}
-            className="inline-flex items-center gap-2 border border-[#FDF8F9]/25 px-5 py-2.5 text-[11px] uppercase tracking-[0.18em] text-[#FDF8F9]/70 transition-all duration-200 hover:border-[#FDF8F9]/50 hover:text-[#FDF8F9]"
           >
             Paste a URL <ChevronRight className="h-3 w-3" />
-          </button>
-          <a
-            href={EXTENSION_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 border border-[#FDF8F9]/20 px-5 py-2.5 text-[11px] uppercase tracking-[0.18em] text-[#FDF8F9]/60 transition-all duration-200 hover:border-[#FDF8F9]/40 hover:text-[#FDF8F9]/90"
-          >
-            Install Extension <ChevronRight className="h-3 w-3" />
-          </a>
+          </Button>
+          <Button asChild variant="outline">
+            <a
+              href={EXTENSION_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Install Extension <ChevronRight className="h-3 w-3" />
+            </a>
+          </Button>
         </div>
       )}
     </div>
@@ -68,12 +64,16 @@ export function ClosetBoard({
   logout,
   isPublic,
   shareUrl,
+  shoppingVisits,
+  shoppingHistoryError,
 }: {
   items: Item[];
   userEmail: string;
   logout: () => void | Promise<void>;
   isPublic: boolean;
   shareUrl: string;
+  shoppingVisits: ShoppingVisit[];
+  shoppingHistoryError: string | null;
 }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [search, setSearch] = useState("");
@@ -81,7 +81,15 @@ export function ClosetBoard({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [choosing, setChoosing] = useState(false);
+  const [view, setView] = useState<"closet" | "choose" | "explore">("closet");
+  const shopping = useShoppingActivity(shoppingVisits, shoppingHistoryError);
+  const exploration = useMemo(() => recommendBrands(items, shopping.visits), [items, shopping.visits]);
+
+  function trackShoppingClick(event: MouseEvent<HTMLDivElement>) {
+    if (event.defaultPrevented || ![0, 1].includes(event.button) || !(event.target instanceof Element)) return;
+    const anchor = event.target.closest<HTMLAnchorElement>("a[data-shopping-link]");
+    if (anchor) shopping.recordVisit(anchor.href);
+  }
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { All: items.length };
@@ -118,130 +126,145 @@ export function ClosetBoard({
   const showRecentlyAdded = search === "" && selectedCategory === "All" && recentlyAdded.length > 0;
 
   return (
-    <>
+    <div onClickCapture={trackShoppingClick} onAuxClickCapture={trackShoppingClick}>
       {/* Top header */}
-      <header className="sticky top-0 z-20 border-b border-[#FDF8F9]/6 bg-[#38040E]/95 backdrop-blur-xl">
-        <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-5 py-3 lg:px-8">
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setSidebarOpen((v) => !v)}
-              className="hidden h-7 w-7 items-center justify-center text-[#FDF8F9]/30 transition-colors hover:text-[#FDF8F9]/70 lg:flex"
-              aria-label="Toggle sidebar"
-            >
-              <List className="h-4 w-4" />
-            </button>
-            <h1 className="text-[15px] font-medium lowercase tracking-tighter text-[#FDF8F9]">
-              closetful.
-            </h1>
-          </div>
+      <Collapsible open={addOpen} onOpenChange={setAddOpen} asChild>
+        <header className="sticky top-0 z-20 border-b border-[#FDF8F9]/6 bg-[#38040E]/95 backdrop-blur-xl">
+          <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-5 py-3 lg:px-8">
+            <div className="flex items-center gap-6">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen((v) => !v)}
+                className="hidden lg:inline-flex"
+                aria-label="Toggle sidebar"
+                aria-expanded={sidebarOpen}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <h1 className="text-[15px] font-medium lowercase tracking-tighter text-[#FDF8F9]">
+                closetful.
+              </h1>
+            </div>
 
-          <div className="order-last w-full sm:order-none sm:mx-4 sm:max-w-xs sm:flex-1">
-            <div className="relative">
-              <Search className="absolute left-0 top-1/2 h-3 w-3 -translate-y-1/2 text-[#FDF8F9]/30" />
-              <input
-                type="search"
-                placeholder="Search your closet"
-                aria-label="Search your closet"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full border-b border-[#FDF8F9]/15 bg-transparent pb-0.5 pl-5 text-[11.5px] tracking-wide text-[#FDF8F9] outline-none transition-colors placeholder:text-[#FDF8F9]/30 focus:border-[#FDF8F9]/50"
-              />
+            <div className="order-last w-full sm:order-none sm:mx-4 sm:max-w-xs sm:flex-1">
+              <div className="relative">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search your closet"
+                  aria-label="Search your closet"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                >
+                  {addOpen ? "Close" : "+ Add"}
+                </Button>
+              </CollapsibleTrigger>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant={viewMode === "grid" ? "secondary" : "ghost"}
+                  size="icon"
+                  onClick={() => setViewMode("grid")}
+                  aria-label="Grid view"
+                  aria-pressed={viewMode === "grid"}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  size="icon"
+                  onClick={() => setViewMode("list")}
+                  aria-label="List view"
+                  aria-pressed={viewMode === "list"}
+                >
+                  <List className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <ShareClosetButton isPublic={isPublic} shareUrl={shareUrl} />
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setAddOpen((v) => !v)}
-              className="min-h-11 whitespace-nowrap text-xs text-[#FDF8F9]/85 transition-colors hover:text-[#FDF8F9]"
-            >
-              {addOpen ? "Close" : "+ Add"}
-            </button>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`flex h-7 w-7 items-center justify-center transition-colors ${
-                  viewMode === "grid" ? "text-[#FDF8F9]" : "text-[#FDF8F9]/30 hover:text-[#FDF8F9]/60"
-                }`}
-                aria-label="Grid view"
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`flex h-7 w-7 items-center justify-center transition-colors ${
-                  viewMode === "list" ? "text-[#FDF8F9]" : "text-[#FDF8F9]/30 hover:text-[#FDF8F9]/60"
-                }`}
-                aria-label="List view"
-              >
-                <List className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            <ShareClosetButton isPublic={isPublic} shareUrl={shareUrl} />
-          </div>
-        </div>
-
-        {/* Add panel — paste-URL is the primary, universal save method
+          {/* Add panel — paste-URL is the primary, universal save method
             (works on any device, no install), with the bookmarklet tucked
             behind "More ways to add" for desktop power users. */}
-        {addOpen && (
-          <div className="border-t border-[#FDF8F9]/6 px-6 py-4 lg:px-8">
+          <CollapsibleContent className="border-t px-6 py-4 lg:px-8">
             <div className="mx-auto flex max-w-2xl flex-col gap-3">
               <PasteUrlForm />
-              <button
-                type="button"
-                onClick={() => setMoreOpen((v) => !v)}
-                className="w-fit text-[11px] text-[#FDF8F9]/35 underline underline-offset-2 hover:text-[#FDF8F9]/70"
-              >
-                {moreOpen ? "Hide other ways to add" : "More ways to add"}
-              </button>
-              {moreOpen && <BookmarkletButton />}
+              <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="w-fit px-0"
+                  >
+                    {moreOpen ? "Hide other ways to add" : "More ways to add"}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent><BookmarkletButton /></CollapsibleContent>
+              </Collapsible>
             </div>
-          </div>
-        )}
-      </header>
+          </CollapsibleContent>
+        </header>
+      </Collapsible>
 
       <div className="flex min-h-[calc(100vh-56px)]">
         {/* Sidebar */}
         <aside
-          className={`hidden flex-shrink-0 flex-col overflow-hidden border-r border-[#FDF8F9]/6 transition-all duration-300 lg:flex ${
-            sidebarOpen ? "w-52" : "w-0"
-          }`}
+          className={`hidden flex-shrink-0 flex-col overflow-hidden border-r border-[#FDF8F9]/6 transition-all duration-300 lg:flex ${sidebarOpen ? "w-52" : "w-0"
+            }`}
         >
           <div className="flex w-52 flex-col gap-1 p-6">
             <p className="mb-3 text-[9px] uppercase tracking-[0.22em] text-[#FDF8F9]/25">Categories</p>
             {categories.map((cat) => (
-              <button
+              <Button
                 key={cat}
+                type="button"
+                variant={selectedCategory === cat ? "secondary" : "ghost"}
+                aria-pressed={selectedCategory === cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`flex items-center justify-between rounded-sm px-2 py-1.5 text-left text-[11.5px] transition-all duration-150 ${
-                  selectedCategory === cat
-                    ? "bg-[#FDF8F9]/8 text-[#FDF8F9]"
-                    : "text-[#FDF8F9]/45 hover:bg-[#FDF8F9]/4 hover:text-[#FDF8F9]/75"
-                }`}
+                className="justify-between"
               >
                 <span className="tracking-wide capitalize">{cat}</span>
                 <span
-                  className={`text-[9px] tabular-nums ${
-                    selectedCategory === cat ? "text-[#FDF8F9]/50" : "text-[#FDF8F9]/20"
-                  }`}
+                  className={`text-[9px] tabular-nums ${selectedCategory === cat ? "text-[#FDF8F9]/50" : "text-[#FDF8F9]/20"
+                    }`}
                 >
                   {categoryCounts[cat] ?? 0}
                 </span>
-              </button>
+              </Button>
             ))}
 
             <div className="mt-8 border-t border-[#FDF8F9]/6 pt-6">
-              <p className="mb-3 text-[9px] uppercase tracking-[0.22em] text-[#FDF8F9]/25">Explore</p>
-              {EXPLORE_BRANDS.map((brand) => (
+              <Button type="button" variant="link" size="sm" className="mb-3 px-2" onClick={() => setView("explore")}>
+                Explore brands <ChevronRight className="h-3 w-3" />
+              </Button>
+              <p className="mb-3 px-2 text-xs text-muted-foreground">
+                {exploration.personalized ? "From your saves & shop visits" : "Save a piece to personalize"}
+              </p>
+              {exploration.brands.map((brand) => (
                 <a
-                  key={brand.label}
+                  key={brand.domain}
                   href={brand.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full px-2 py-1.5 text-left text-[11px] tracking-wide text-[#FDF8F9]/35 transition-colors hover:text-[#FDF8F9]/70"
+                  data-shopping-link
+                  className="block w-full rounded-md px-2 py-2 text-left text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
-                  {brand.label}
+                  <span className="block font-medium text-foreground">{brand.name}</span>
+                  <span className="mt-1 block text-[11px] leading-4">{brand.reason}</span>
                 </a>
               ))}
             </div>
@@ -249,12 +272,14 @@ export function ClosetBoard({
             <div className="mt-8 border-t border-[#FDF8F9]/6 pt-6">
               <p className="mb-1 truncate text-[10px] text-[#FDF8F9]/30">{userEmail}</p>
               <form action={logout}>
-                <button
+                <Button
                   type="submit"
-                  className="text-[10px] uppercase tracking-[0.15em] text-[#FDF8F9]/35 hover:text-[#FDF8F9]/70"
+                  variant="ghost"
+                  size="sm"
+                  className="px-0"
                 >
                   Log out
-                </button>
+                </Button>
               </form>
             </div>
           </div>
@@ -262,93 +287,102 @@ export function ClosetBoard({
 
         {/* Main content */}
         <main className="min-w-0 flex-1 px-6 py-8 lg:px-8">
-          <nav aria-label="Closet views" className="mb-8 flex gap-3">
-            <button type="button" aria-pressed={!choosing} onClick={() => setChoosing(false)}
-              className={`min-h-11 rounded-full border px-4 text-sm ${!choosing ? "border-[#FDF8F9] bg-[#FDF8F9] text-[#38040E]" : "border-[#FDF8F9]/30"}`}>
+          <nav aria-label="Closet views" className="mb-8 flex flex-wrap gap-3">
+            <Button type="button" aria-pressed={view === "closet"} onClick={() => setView("closet")}
+              variant={view === "closet" ? "default" : "outline"}>
               My closet
-            </button>
-            <button type="button" aria-pressed={choosing} onClick={() => setChoosing(true)}
-              className={`min-h-11 rounded-full border px-4 text-sm ${choosing ? "border-[#FDF8F9] bg-[#FDF8F9] text-[#38040E]" : "border-[#FDF8F9]/30"}`}>
+            </Button>
+            <Button type="button" aria-pressed={view === "choose"} onClick={() => setView("choose")}
+              variant={view === "choose" ? "default" : "outline"}>
               Help me choose
-            </button>
+            </Button>
+            <Button type="button" aria-pressed={view === "explore"} onClick={() => setView("explore")}
+              variant={view === "explore" ? "default" : "outline"}>
+              Explore
+            </Button>
           </nav>
-          <div hidden={!choosing}><DecisionDesk items={items.filter((item) => !search.trim() ||
+          <div hidden={view !== "explore"}>
+            <ExploreBrands brands={exploration.brands} personalized={exploration.personalized}
+              historyError={shopping.error} hasVisits={shopping.visits.length > 0}
+              clearing={shopping.clearing} onClearHistory={shopping.clearHistory} />
+          </div>
+          <div hidden={view !== "choose"}><DecisionDesk items={items.filter((item) => !search.trim() ||
             [item.name, item.category, ...item.tags].some((value) => value?.toLowerCase().includes(search.trim().toLowerCase()))
           )} /></div>
-          <div hidden={choosing}>
-          {/* Recently Added */}
-          {showRecentlyAdded && (
-            <section className="mb-12">
-              <div className="mb-5 flex items-baseline justify-between">
-                <h2 className="text-[19px] font-semibold tracking-tight text-[#FDF8F9]/80">Recently Added</h2>
-                <span className="text-[9px] uppercase tracking-[0.2em] text-[#FDF8F9]/25">
-                  {items.length} {items.length === 1 ? "piece" : "pieces"} saved
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
-                {recentlyAdded.map((item) => (
-                  <ItemCard key={`recent-${item.id}`} item={item} viewMode="recent" />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Divider + section label */}
-          <div className="mb-6 flex items-center gap-4">
-            <h2 className="flex-shrink-0 text-[19px] font-semibold capitalize tracking-tight text-[#FDF8F9]/80">
-              {selectedCategory === "All" ? "All Pieces" : selectedCategory}
-            </h2>
-            <div className="h-px flex-1 bg-[#FDF8F9]/6" />
-            {filtered.length > 0 && (
-              <span className="flex-shrink-0 text-[9px] uppercase tracking-[0.18em] text-[#FDF8F9]/25">
-                {filtered.length} {filtered.length === 1 ? "item" : "items"}
-              </span>
-            )}
-          </div>
-
-          {/* Mobile category filter row */}
-          <div
-            className="mb-6 flex gap-5 overflow-x-auto pb-1 lg:hidden"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`whitespace-nowrap border-b pb-1 text-[10px] uppercase capitalize tracking-[0.15em] transition-all ${
-                  selectedCategory === cat
-                    ? "border-[#FDF8F9] text-[#FDF8F9]"
-                    : "border-transparent text-[#FDF8F9]/35"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Grid or List */}
-          {viewMode === "grid" ? (
-            <div className="grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 xl:grid-cols-4">
-              {filtered.length > 0 ? (
-                filtered.map((item) => <ItemCard key={item.id} item={item} viewMode="grid" />)
-              ) : (
-                <EmptyState hasItems={items.length > 0} onAdd={() => setAddOpen(true)} />
-              )}
-            </div>
-          ) : (
-            <div className="border-t border-[#FDF8F9]/6">
-              {filtered.length > 0 ? (
-                filtered.map((item) => <ItemCard key={item.id} item={item} viewMode="list" />)
-              ) : (
-                <div className="grid grid-cols-1">
-                  <EmptyState hasItems={items.length > 0} onAdd={() => setAddOpen(true)} />
+          <div hidden={view !== "closet"}>
+            {/* Recently Added */}
+            {showRecentlyAdded && (
+              <section className="mb-12">
+                <div className="mb-5 flex items-baseline justify-between">
+                  <h2 className="text-[19px] font-semibold tracking-tight text-[#FDF8F9]/80">Recently Added</h2>
+                  <span className="text-[9px] uppercase tracking-[0.2em] text-[#FDF8F9]/25">
+                    {items.length} {items.length === 1 ? "piece" : "pieces"} saved
+                  </span>
                 </div>
+                <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
+                  {recentlyAdded.map((item) => (
+                    <ItemCard key={`recent-${item.id}`} item={item} viewMode="recent" />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Divider + section label */}
+            <div className="mb-6 flex items-center gap-4">
+              <h2 className="flex-shrink-0 text-[19px] font-semibold capitalize tracking-tight text-[#FDF8F9]/80">
+                {selectedCategory === "All" ? "All Pieces" : selectedCategory}
+              </h2>
+              <Separator className="flex-1" />
+              {filtered.length > 0 && (
+                <span className="flex-shrink-0 text-[9px] uppercase tracking-[0.18em] text-[#FDF8F9]/25">
+                  {filtered.length} {filtered.length === 1 ? "item" : "items"}
+                </span>
               )}
             </div>
-          )}
+
+            {/* Mobile category filter row */}
+            <div
+              className="mb-6 flex gap-5 overflow-x-auto pb-1 lg:hidden"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {categories.map((cat) => (
+                <Button
+                  key={cat}
+                  type="button"
+                  variant={selectedCategory === cat ? "secondary" : "ghost"}
+                  size="sm"
+                  aria-pressed={selectedCategory === cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className="capitalize"
+                >
+                  {cat}
+                </Button>
+              ))}
+            </div>
+
+            {/* Grid or List */}
+            {viewMode === "grid" ? (
+              <div className="grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 xl:grid-cols-4">
+                {filtered.length > 0 ? (
+                  filtered.map((item) => <ItemCard key={item.id} item={item} viewMode="grid" />)
+                ) : (
+                  <EmptyState hasItems={items.length > 0} onAdd={() => setAddOpen(true)} />
+                )}
+              </div>
+            ) : (
+              <div className="border-t border-[#FDF8F9]/6">
+                {filtered.length > 0 ? (
+                  filtered.map((item) => <ItemCard key={item.id} item={item} viewMode="list" />)
+                ) : (
+                  <div className="grid grid-cols-1">
+                    <EmptyState hasItems={items.length > 0} onAdd={() => setAddOpen(true)} />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </main>
       </div>
-    </>
+    </div>
   );
 }

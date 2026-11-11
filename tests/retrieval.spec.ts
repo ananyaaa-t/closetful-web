@@ -6,16 +6,25 @@ test("generative picking creates a grounded shortlist, applies its price limit a
     expect(request.mode).toBe("demo");
     expect(request.itemIds).toContain("sweater");
     expect(request).not.toHaveProperty("notes");
-    await route.fulfill({ json: { selection: {
-      picks: [{ itemId: "sweater", savedTags: ["neutral", "everyday"] }],
-      maxPrice: 100, category: "clothing", considered: 6,
-    } } });
+    await route.fulfill({
+      json: {
+        selection: {
+          picks: [{ itemId: "sweater", savedTags: ["neutral", "everyday"] }],
+          maxPrice: 100, category: "clothing", considered: 6,
+        }
+      }
+    });
   });
   await page.goto("/demo");
   await page.getByRole("button", { name: "Help me choose", exact: true }).click();
   await page.getByLabel("Describe what you're deciding").fill("Pick neutral everyday pieces under $100");
   await page.getByRole("button", { name: "Pick from my closet", exact: true }).click();
   await expect(page.getByText("1 AI-picked piece added to your shortlist.", { exact: false })).toBeVisible();
+  await expect(page.getByLabel("Maximum price per item ($)")).toHaveValue("100");
+  const filters = page.getByRole("button", { name: "Fine-tune category, budget and priorities" });
+  await expect(filters).toHaveAttribute("aria-expanded", "false");
+  await filters.press("Enter");
+  await expect(page.getByLabel("Maximum price per item ($)")).toBeVisible();
   await expect(page.getByLabel("Maximum price per item ($)")).toHaveValue("100");
   const desk = page.getByRole("region", { name: "Help me choose", exact: true });
   await expect(desk.getByRole("article")).toHaveCount(1);
@@ -42,9 +51,11 @@ test("AI errors are visible and do not produce an invented shortlist", async ({ 
 });
 
 test("an empty AI result stays empty instead of falling back to unrelated products", async ({ page }) => {
-  await page.route("**/api/retrieve", (route) => route.fulfill({ json: {
-    selection: { picks: [], category: "All", maxPrice: null, considered: 6 },
-  } }));
+  await page.route("**/api/retrieve", (route) => route.fulfill({
+    json: {
+      selection: { picks: [], category: "All", maxPrice: null, considered: 6 },
+    }
+  }));
   await page.goto("/demo");
   await page.getByRole("button", { name: "Help me choose", exact: true }).click();
   await page.getByLabel("Describe what you're deciding").fill("A purple kayak");

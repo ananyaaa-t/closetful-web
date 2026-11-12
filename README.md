@@ -3,28 +3,6 @@
 A full-stack shopping wishlist platform with a companion Chrome extension —
 save products from any online store into a single, AI-organized closet.
 
-## See it in action
-
-![Closetful demo: save a piece, ask Gemini to pick from the closet, and compare the shortlist](docs/media/closetful-demo.gif)
-
-[Watch the full demo recording](docs/media/closetful-demo.webm).
-Recorded from the working `/demo` app with real Gemini responses.
-All shown pieces, prices and notes are illustrative. Photos use the
-[Unsplash License](https://unsplash.com/license); [photo credits](lib/demo-catalog.ts).
-
-<details>
-<summary>Desktop and mobile screenshots</summary>
-
-**A visual wishlist with working product photos**
-
-![Sample Closetful wishlist on desktop](docs/media/closet-desktop.png)
-
-| Generative picking and comparison | Mobile experience |
-| --- | --- |
-| <img src="docs/media/choose-desktop.png" alt="Gemini picks saved pieces under a budget and builds a comparison" width="760"> | <img src="docs/media/choose-mobile.png" alt="Natural-language picking and comparison on mobile" width="240"> |
-
-</details>
-
 ## What it does
 
 - **Generative retrieval from your own closet.** Describe what you want, such
@@ -103,8 +81,7 @@ original URL to update its photo, or use **Edit details** to correct it manually
 Run `npm test`, `npm run lint`, and `npm run build` for local checks.
 `npm run test:e2e` exercises saves, recommendations, generative picking and API
 checks, mobile photos, retries, and bookmarklet capture; it currently uses
-installed Google Chrome. The automated AI tests stub provider responses;
-the recorded demo was additionally verified against live Gemini.
+installed Google Chrome. The automated AI tests stub provider responses.
 
 ## Tech stack
 
